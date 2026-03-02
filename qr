@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍎 学生作品墙 · 扫码投票版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: linear-gradient(145deg, #f9f3e8 0%, #fff3db 100%);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .voting-container {
+            max-width: 1300px;
+            width: 100%;
+        }
+        /* 头部 + 二维码区域 */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #3e2c1b;
+            letter-spacing: -0.5px;
+            text-shadow: 3px 3px 0 #f5d7a1;
+            margin-bottom: 0.25rem;
+        }
+        .header p {
+            font-size: 1.2rem;
+            color: #6b4f2b;
+            background: #fff2d7b3;
+            display: inline-block;
+            padding: 0.5rem 2rem;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+            border: 1px solid #ffe5b9;
+            margin-bottom: 1.5rem;
+        }
+        /* 新：二维码 + 快捷说明 */
+        .qr-scan-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            background: #faeedbb0;
+            backdrop-filter: blur(8px);
+            border-radius: 80px;
+            padding: 1rem 2.5rem;
+            margin: 1rem auto 2rem auto;
+            max-width: 700px;
+            border: 2px solid #ebc999;
+            box-shadow: 0 15px 25px -10px #aa8b60;
+        }
+        .qrcode-box {
+            background: white;
+            padding: 0.7rem;
+            border-radius: 30px;
+            box-shadow: 0 5px 0 #ac8b5a;
+            border: 3px solid #ffd58c;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qrcode-box svg {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
+        .scan-hint {
+            text-align: left;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #3d2d16;
+            background: #ffeac2;
+            padding: 0.7rem 1.8rem;
+            border-radius: 50px;
+            border: 2px solid #b18b50;
+            box-shadow: inset 0 2px 5px #ffe3aa;
+        }
+        .scan-hint span {
+            font-size: 2rem;
+            margin-right: 10px;
+            filter: drop-shadow(2px 2px 0 #a77b42);
+        }
+
+        /* 上传卡片 */
+        .upload-section {
+            background: rgba(255, 242, 222, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 2rem 2rem 2rem 2.5rem;
+            margin-bottom: 3rem;
+            border: 2px dashed #d4a76a;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 20px 35px -10px rgba(110, 70, 20, 0.2);
+        }
+        .upload-label {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            background: #fff1d2;
+            padding: 0.9rem 2rem;
+            border-radius: 60px;
+            border: 2px solid #b48b54;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #8b643a;
+        }
+        .upload-label:hover {
+            background: #ffe6b7;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0 #8b643a;
+        }
+        .upload-label:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #8b643a;
+        }
+        .upload-label span {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #3b2a15;
+        }
+        .upload-icon {
+            font-size: 2.2rem;
+        }
+        #imageUpload {
+            display: none;
+        }
+        .upload-hint {
+            color: #5f4a2e;
+            font-size: 1.15rem;
+            padding-right: 1rem;
+        }
+        .upload-hint strong {
+            background: #dbbd8c;
+            padding: 4px 14px;
+            border-radius: 30px;
+            color: #2f1f0a;
+            margin-left: 8px;
+        }
+        /* 作品网格 */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 2rem 1.5rem;
+            margin-top: 1.5rem;
+        }
+        /* 作品卡片 */
+        .art-card {
+            background: #fffcf0;
+            border-radius: 40px;
+            padding: 1.4rem 1.2rem 1.5rem 1.2rem;
+            box-shadow: 0 20px 30px -12px rgba(80, 50, 20, 0.25),
+                        0 0 0 2px #fbe6c2 inset,
+                        0 0 0 5px #fffef8 inset;
+            transition: transform 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            border: 3px solid #ecbc7d;
+        }
+        .art-card:hover {
+            transform: scale(1.02);
+        }
+        /* 图片区域 */
+        .image-wrapper {
+            background: #f3e1c2;
+            border-radius: 32px;
+            padding: 0.8rem;
+            border: 3px solid #ddb585;
+            box-shadow: inset 0 2px 8px #a58354;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .student-img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 24px;
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            background: #e9d8bb;
+            border: 3px solid #ffefcf;
+        }
+        .placeholder-img {
+            width: 100%;
+            height: 100%;
+            background: #ebd7b6;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #816e4b;
+            font-size: 3.2rem;
+            font-weight: 500;
+            border: 3px dashed #c3a165;
+        }
+        /* 学生信息 & 点赞行 */
+        .student-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 0.6rem 0 0.8rem 0;
+            padding: 0 0.2rem;
+        }
+        .student-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: #ffd89a;
+            padding: 0.2rem 1.2rem 0.2rem 1rem;
+            border-radius: 30px;
+            color: #311f09;
+            letter-spacing: -0.2px;
+            border: 2px solid #b47d44;
+            line-height: 1.8rem;
+        }
+        .vote-box {
+            background: #ffedd1;
+            border-radius: 40px;
+            padding: 0.3rem 0.8rem 0.3rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            border: 2px solid #bc8f52;
+            box-shadow: 0 3px 0 #7b5b32;
+        }
+        .vote-count {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #452f12;
+            min-width: 2.2rem;
+            text-align: center;
+        }
+        .like-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: 0.1s;
+            line-height: 1;
+            padding: 0 2px;
+            filter: drop-shadow(0 2px 2px #b3a07e);
+        }
+        .like-btn:hover {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 6px #ffb882);
+        }
+        .like-btn:active {
+            transform: scale(0.95);
+        }
+        /* 删除按钮（轻量） */
+        .delete-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.3rem;
+            color: #a56464;
+            cursor: pointer;
+            padding: 0 8px 0 4px;
+            opacity: 0.6;
+            transition: 0.1s;
+        }
+        .delete-btn:hover {
+            opacity: 1;
+            color: #c03939;
+            transform: scale(1.2);
+        }
+        /* 空状态 */
+        .empty-gallery {
+            text-align: center;
+            background: #fff4e3cc;
+            backdrop-filter: blur(6px);
+            padding: 4rem 2rem;
+            border-radius: 80px;
+            border: 3px solid #ebc28b;
+            color: #856f4b;
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-top: 2rem;
+        }
+        .empty-gallery span {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        footer {
+            margin-top: 3rem;
+            color: #ac8f64;
+            text-align: center;
+            font-size: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem 2rem;
+        }
+        /* 重置链接样式 */
+        .footer-link {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: 0.1s;
+            border-bottom: 1px dashed;
+        }
+        .footer-link:hover {
+            opacity: 1;
+        }
+    </style>
+    <!-- 生成二维码的轻量库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-svg@1.1.0/dist/qrcode-svg.min.js"></script>
+</head>
+<body>
+<div class="voting-container">
+    <div class="header">
+        <h1>🎨 学生艺术展 · 点赞投票</h1>
+        <p>⭐ 上传作品，为你喜欢的同学点赞打 call ⭐</p>
+    </div>
+
+    <!-- 二维码扫一扫区域 (动态生成) -->
+    <div class="qr-scan-row" id="qrScanRow">
+        <div class="qrcode-box" id="qrcodeContainer">
+            <!-- 二维码将通过JS生成在这里 -->
+        </div>
+        <div class="scan-hint">
+            <span>📱</span> 扫一扫 · 手机直接投票
+        </div>
+    </div>
+
+    <!-- 上传区域 -->
+    <div class="upload-section">
+        <label for="imageUpload" class="upload-label">
+            <span class="upload-icon">📤</span>
+            <span>上传图片</span>
+        </label>
+        <input type="file" id="imageUpload" accept="image/*" multiple>
+        <div class="upload-hint">
+            ✨ 点击上传一张或多张学生作品 <strong>每人可投多次票</strong>
+        </div>
+    </div>
+
+    <!-- 作品网格动态显示 -->
+    <div id="gallery" class="gallery-grid">
+        <!-- 空状态通过JS填充 -->
+    </div>
+
+    <footer>
+        <span>⚡ 点击❤️为作品点赞 · 投票实时累计 ⚡</span>
+        <span class="footer-link" id="resetFooterBtn">🗑️ 清空全部</span>
+        <span id="artStat" style="opacity:0.7;"></span>
+    </footer>
+</div>
+
+<script>
+    (function() {
+        // ---------- 核心数据 ----------
+        let artworks = [];
+        const STORAGE_KEY = 'artworks_voting';
+
+        // 加载本地数据
+        function loadFromStorage() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        artworks = parsed;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        // 保存到本地
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(artworks));
+        }
+
+        // ---------- 生成当前页面的二维码 (指向当前URL) ----------
+        function generateQRCode() {
+            const container = document.getElementById('qrcodeContainer');
+            if (!container) return;
+
+            // 获取当前页面完整URL（去掉可能存在的hash，使学生扫到同样的页面）
+            let currentUrl = window.location.href.split('#')[0];
+            // 如果太长的本地文件地址，也可以展示；二维码仍然有效，手机需要和电脑在同一网络才可访问本地html？但二维码就是当前页面，手机如果扫同一个文件，需要能够访问到这个页面。
+            // 对于本地文件，手机无法通过"file://"协议访问电脑文件。所以增强说明：若在局域网服务器，请手动替换；我们加入友好提示。
+            // 但工具本身依然是可用的——扫出的地址如果是file协议，手机无法打开。因此加入说明：如果是在局域网，替换ip；但大部分课堂场景可能用互联网或局域网分享。
+            // 改进：检测是否是file协议，给出提示。
+            if (currentUrl.startsWith('file://')) {
+                // 提供说明，但仍然生成二维码，用户可手动修改域名
+                // 我们可以额外在下方小字提示，但不影响功能。
+                const note = document.createElement('div');
+                note.style.fontSize = '0.7rem';
+                note.style.marginTop = '4px';
+                note.style.color = '#aa6b35';
+                note.innerText = '⚠️ 本地文件需部署至服务器扫码';
+                // 插入到提示后面
+                document.querySelector('.scan-hint')?.appendChild(note);
+            }
+
+            // 使用 qrcode-svg 库生成漂亮的SVG二维码
+            try {
+                // 避免重复生成，清空
+                container.innerHTML = '';
+                const qrcode = new QRCode({
+                    content: currentUrl,
+                    padding: 2,
+                    width: 110,
+                    height: 110,
+                    color: "#3a2814",
+                    background: "#fff9e8",
+                    ecl: "M",
+                    join: true
+                });
+                const svg = qrcode.svg();
+                container.innerHTML = svg;
+            } catch (e) {
+                container.innerHTML = '⚠️';
+                console.warn('二维码生成失败', e);
+            }
+        }
+
+        // ---------- 渲染作品网格 ----------
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            if (!gallery) return;
+
+            if (artworks.length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty-gallery" style="grid-column:1/-1;">
+                        <span>🖼️✨</span>
+                        还没有作品呢～<br>点击上方按钮上传第一张学生图片吧！
+                    </div>
+                `;
+            } else {
+                let htmlStr = '';
+                artworks.forEach((art, index) => {
+                    const imgSrc = art.imageData || 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23eeddc0%22%2F%3E%3Ctext%20x%3D%2230%22%20y%3D%22120%22%20font-size%3D%2230%22%20fill%3D%22%23927a54%22%3E📷%20无图%3C%2Ftext%3E%3C%2Fsvg%3E';
+
+                    htmlStr += `
+                        <div class="art-card" data-id="${art.id}" data-index="${index}">
+                            <div class="image-wrapper">
+                                <img src="${imgSrc}" alt="学生作品" class="student-img" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23eeddc0%22%2F%3E%3Ctext%20x%3D%2220%22%20y%3D%22120%22%20font-size%3D%2230%22%20fill%3D%22%23927a54%22%3E🌅%20加载失败%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                            </div>
+                            <div class="student-info">
+                                <span class="student-name">👤 学生 ${index + 1}</span>
+                                <div style="display: flex; align-items: center;">
+                                    <div class="vote-box">
+                                        <span class="vote-count" id="vote-${art.id}">${art.votes || 0}</span>
+                                        <button class="like-btn" data-id="${art.id}" aria-label="点赞投票">❤️</button>
+                                    </div>
+                                    <button class="delete-btn" data-id="${art.id}" title="移除作品">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                gallery.innerHTML = htmlStr;
+
+                // 绑定点赞
+                document.querySelectorAll('.like-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = this.dataset.id;
+                        addVote(id);
+                    });
+                });
+
+                // 绑定删除
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = this.dataset.id;
+                        deleteArtwork(id);
+                    });
+                });
+            }
+            updateStat(); // 更新底部统计
+        }
+
+        // 增加点赞
+        function addVote(id) {
+            const artwork = artworks.find(a => a.id === id);
+            if (artwork) {
+                artwork.votes = (artwork.votes || 0) + 1;
+                const voteSpan = document.getElementById(`vote-${id}`);
+                if (voteSpan) voteSpan.textContent = artwork.votes;
+                saveToStorage();
+                updateStat();
+            }
+        }
+
+        // 删除单个作品
+        function deleteArtwork(id) {
+            artworks = artworks.filter(a => a.id !== id);
+            saveToStorage();
+            renderGallery();
+        }
+
+        // 清空全部
+        function resetAll() {
+            if (artworks.length > 0 && confirm('确定要删除全部作品吗？')) {
+                artworks = [];
+                saveToStorage();
+                renderGallery();
+            }
+        }
+
+        // 处理上传
+        function handleUpload(files) {
+            if (!files || files.length === 0) return;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) {
+                    alert(`文件 “${file.name}” 不是图片，已跳过。`);
+                    continue;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64Data = e.target.result;
+                    const id = 'art_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + i;
+
+                    artworks.push({
+                        id: id,
+                        imageData: base64Data,
+                        votes: 0,
+                        timestamp: Date.now()
+                    });
+
+                    saveToStorage();
+                    renderGallery();
+                };
+                reader.onerror = () => alert(`读取图片 ${file.name} 失败`);
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 更新底部统计
+        function updateStat() {
+            const statSpan = document.getElementById('artStat');
+            if (statSpan) {
+                const totalVotes = artworks.reduce((acc, cur) => acc + (cur.votes || 0), 0);
+                statSpan.textContent = `📊 ${artworks.length}件作品 · 共${totalVotes}票`;
+            }
+        }
+
+        // ---------- 初始化 ----------
+        loadFromStorage();
+        renderGallery();
+        generateQRCode(); // 生成二维码
+
+        // 监听上传
+        const uploadInput = document.getElementById('imageUpload');
+        uploadInput.addEventListener('change', function(e) {
+            handleUpload(e.target.files);
+            uploadInput.value = ''; // 清空，允许重复上传同文件
+        });
+
+        // 底部清空按钮
+        document.getElementById('resetFooterBtn').addEventListener('click', resetAll);
+
+        // 可选：每当页面hash变化或通过其他方式改变URL时重新生成二维码? 但静态页面极少变化，且无需。但是保留一次即可。
+
+        // 如果是在桌面使用，二维码可能因为file协议无效，但不影响页面功能。
+        // 增加额外提醒：双击底部空白可重新生成二维码(以防某些情况)
+        const qrRow = document.getElementById('qrScanRow');
+        qrRow.addEventListener('dblclick', function() {
+            generateQRCode();
+        });
+    })();
+</script>
+<!-- 说明：二维码指向当前页面的完整网址，手机扫码需确保手机能访问此地址（如在同一个Wi-Fi下通过IP访问，或部署到服务器） -->
+</body>
+</html>
